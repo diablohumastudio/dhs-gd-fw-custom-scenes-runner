@@ -20,7 +20,7 @@ func _on_add_button_pressed() -> void:
 
 func _on_save_button_pressed() -> void:
 	save_config()
-	scenes_updated.emit()
+	scenes_updated.emit() #Emited for the toolbar to update
 
 func _on_close_requested() -> void:
 	queue_free()
