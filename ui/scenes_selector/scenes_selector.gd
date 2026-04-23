@@ -17,18 +17,16 @@ func _ready() -> void:
 func _on_add_button_pressed() -> void:
 	_scenes.append(DH_CSR_RunnerSceneData.new())
 	_set_items_from_scenes()
-
-func _on_save_button_pressed() -> void:
-	save_config()
-	scenes_updated.emit() #Emited for the toolbar to update
+	_save_and_notify()
 
 func _on_close_requested() -> void:
 	queue_free()
 
-func save_config() -> void:
+func _save_and_notify() -> void:
 	var scenes_resource: DH_CSR_RunnerScenes = DH_CSR_RunnerScenes.new()
 	scenes_resource.scenes = _scenes
 	ResourceSaver.save(scenes_resource, saved_scenes_resource_path)
+	scenes_updated.emit()
 
 func load_scenes():
 	var scenes_resource: DH_CSR_RunnerScenes
@@ -40,6 +38,7 @@ func load_scenes():
 
 func _on_item_remove_pressed(data: DH_CSR_RunnerSceneData) -> void:
 	_scenes.erase(data)
+	_save_and_notify()
 
 func _set_items_from_scenes():
 	for child in %ItemsContainer.get_children():
@@ -48,4 +47,5 @@ func _set_items_from_scenes():
 		var new_item: DH_CSR_SceneItem = item_scene.instantiate()
 		new_item.set_data(scene_data)
 		new_item.remove_pressed.connect(_on_item_remove_pressed)
+		new_item.data_changed.connect(_save_and_notify)
 		%ItemsContainer.add_child(new_item)

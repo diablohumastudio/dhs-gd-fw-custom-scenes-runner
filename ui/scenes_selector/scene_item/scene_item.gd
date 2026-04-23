@@ -2,8 +2,7 @@
 class_name DH_CSR_SceneItem
 extends HBoxContainer
 
-signal scene_button_pressed
-signal shortcut_button_pressed
+signal data_changed
 signal remove_pressed
 
 var run_scene_data: DH_CSR_RunnerSceneData = DH_CSR_RunnerSceneData.new()
@@ -22,6 +21,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		_update_shortcut_button()
 		_capturing_shortcut = false
 		set_process_unhandled_key_input(false)
+		data_changed.emit()
 
 func set_data(new_data: DH_CSR_RunnerSceneData) -> void:
 	run_scene_data = new_data
@@ -50,8 +50,7 @@ func _on_shortcut_button_pressed() -> void:
 	_capturing_shortcut = true
 	%ShortcutButton.text = "Press a key..."
 	set_process_unhandled_key_input(true)
-	shortcut_button_pressed.emit()
-
+	data_changed.emit()
 func _on_remove_button_pressed() -> void:
 	remove_pressed.emit(run_scene_data)
 	queue_free()
@@ -59,6 +58,8 @@ func _on_remove_button_pressed() -> void:
 func _on_file_dialog_file_selected(path: String) -> void:
 	run_scene_data.scene_path = path
 	_update_scene_button()
+	data_changed.emit()
 
 func _on_name_edit_text_changed(new_text: String) -> void:
 	run_scene_data.name = new_text
+	data_changed.emit()
