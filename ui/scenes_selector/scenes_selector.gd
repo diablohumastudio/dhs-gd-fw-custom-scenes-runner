@@ -38,10 +38,14 @@ func load_scenes():
 		scenes_resource = DH_CSR_RunnerScenes.new()
 	_scenes = scenes_resource.scenes
 
+func _on_item_remove_pressed(data: DH_CSR_RunnerSceneData) -> void:
+	_scenes.erase(data)
+
 func _set_items_from_scenes():
 	for child in %ItemsContainer.get_children():
 		child.queue_free()
 	for scene_data in _scenes:
 		var new_item: DH_CSR_SceneItem = item_scene.instantiate()
 		new_item.set_data(scene_data)
+		new_item.remove_pressed.connect(_on_item_remove_pressed)
 		%ItemsContainer.add_child(new_item)

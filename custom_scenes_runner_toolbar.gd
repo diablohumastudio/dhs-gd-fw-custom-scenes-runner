@@ -8,8 +8,7 @@ const SELECT_SCENES_POPUP_PKSC: PackedScene = preload("uid://dlfttbd1xdwe8")
 var scenes: Array[DH_CSR_RunnerSceneData] = []
 var saved_scenes_resource_path: String:
 	get:
-		var script_path: String = get_script().resource_path
-		return script_path.get_base_dir().path_join("data/scenes.tres")
+		return "res://dh_csr/scenes.tres"
 
 func _enter_tree() -> void:
 	set_meta("dhs_toolbar", true)
@@ -19,6 +18,7 @@ func _enter_tree() -> void:
 
 func _load_scenes():
 	if !ResourceLoader.exists(saved_scenes_resource_path):
+		DirAccess.make_dir_recursive_absolute(saved_scenes_resource_path.get_base_dir())
 		ResourceSaver.save(DH_CSR_RunnerScenes.new(), saved_scenes_resource_path)
 	var scenes_resource: DH_CSR_RunnerScenes = ResourceLoader.load(saved_scenes_resource_path, "", ResourceLoader.CACHE_MODE_REPLACE)
 	scenes = scenes_resource.scenes
