@@ -2,45 +2,38 @@
 class_name DH_CustomScenesRunnerToolbar
 extends PopupMenu
 
+## View: renders the scene list as menu items and routes input to the shared
+## ViewModel. It does NOT open other views — "Select Scenes" is emitted as an
+## intent on the ViewModel; the plugin coordinator handles the actual window.
+##
+## The ViewModel is fetched from the plugin singleton in _enter_tree (rather
+## than injected) so the View survives the core toolbar's duplicate-and-relocate
+## mechanism: _enter_tree re-runs on the clone and re-acquires the shared VM.
+
 const SELECT_SCENES_ITEM_ID := 1000
 
-const SELECT_SCENES_POPUP_PKSC: PackedScene = preload("uid://dlfttbd1xdwe8")
-var scenes: Array[DH_CSR_RunnerSceneData] = []
-var saved_scenes_resource_path: String:
-	get:
-		return "res://dh_csr/scenes.tres"
+var _view_model: DH_CSR_ToolbarViewModel
+
+func _init(view_model_: DH_CSR_ToolbarViewModel) -> void:
+	_view_model = view_model_
 
 func _enter_tree() -> void:
 	set_meta("dhs_toolbar", true)
-	_load_scenes()
-	_rebuild_menu()
-	id_pressed.connect(_on_menu_id_pressed)
+	if not _view_model.scenes_changed.is_connected(_rebuild_menu):
+		_view_model.scenes_changed.connect(_rebuild_menu)
+	if not id_pressed.is_connected(_on_menu_id_pressed):
+		id_pressed.connect(_on_menu_id_pressed)
+	_view_model.reload()
 
-func _load_scenes():
-	if !ResourceLoader.exists(saved_scenes_resource_path):
-		DirAccess.make_dir_recursive_absolute(saved_scenes_resource_path.get_base_dir())
-		ResourceSaver.save(DH_CSR_RunnerScenes.new(), saved_scenes_resource_path)
-	var scenes_resource: DH_CSR_RunnerScenes = ResourceLoader.load(saved_scenes_resource_path, "", ResourceLoader.CACHE_MODE_REPLACE)
-	scenes = scenes_resource.scenes
-
-func _rebuild_menu() -> void:
+func _rebuild_menu(scenes: Array[DH_CSR_RunnerSceneData]) -> void:
 	clear()
 	for ii in scenes.size():
 		add_item("Run " + scenes[ii].name, ii, scenes[ii].keyboard_shortcut)
-	add_separator()	
+	add_separator()
 	add_item("Select Scenes", SELECT_SCENES_ITEM_ID)
 
 func _on_menu_id_pressed(id: int) -> void:
 	if id == SELECT_SCENES_ITEM_ID:
-		var select_scenes_popup_instance: DH_CSR_ScenesSelector = SELECT_SCENES_POPUP_PKSC.instantiate()
-		select_scenes_popup_instance.saved_scenes_resource_path = saved_scenes_resource_path
-		select_scenes_popup_instance.scenes_updated.connect(_on_scenes_updated)
-		EditorInterface.get_base_control().add_child(select_scenes_popup_instance)
-		select_scenes_popup_instance.popup_centered()
+		_view_model.request_open_selector()
 	else:
-		if id < scenes.size():
-			EditorInterface.play_custom_scene(scenes[id].scene_path)
-
-func _on_scenes_updated() -> void:
-	_load_scenes()
-	_rebuild_menu()
+		_view_model.run_scene(id)

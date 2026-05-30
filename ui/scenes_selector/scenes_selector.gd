@@ -2,50 +2,30 @@
 class_name DH_CSR_ScenesSelector
 extends Window
 
+## View: renders one row per item ViewModel and forwards button input to the
+## ViewModel. Owns no scene collection or persistence logic.
+
 signal scenes_updated
 
-var saved_scenes_resource_path: String
 var item_scene: PackedScene = preload("uid://70e3ag4jq3k6")
-var _scenes: Array[DH_CSR_RunnerSceneData]
-var _current_item: DH_CSR_SceneItem = null
-
+var view_model: DH_CSR_ScenesSelectorViewModel
 
 func _ready() -> void:
-	load_scenes()
-	_set_items_from_scenes()
+	view_model.items_changed.connect(_render)
+	_render(view_model._items)
 
 func _on_add_button_pressed() -> void:
-	_scenes.append(DH_CSR_RunnerSceneData.new())
-	_set_items_from_scenes()
-	_save_and_notify()
+	view_model.add_scene()
 
 func _on_close_requested() -> void:
 	queue_free()
 
-func _save_and_notify() -> void:
-	var scenes_resource: DH_CSR_RunnerScenes = DH_CSR_RunnerScenes.new()
-	scenes_resource.scenes = _scenes
-	ResourceSaver.save(scenes_resource, saved_scenes_resource_path)
-	scenes_updated.emit()
-
-func load_scenes():
-	var scenes_resource: DH_CSR_RunnerScenes
-	if ResourceLoader.exists(saved_scenes_resource_path):
-		scenes_resource = ResourceLoader.load(saved_scenes_resource_path, "", ResourceLoader.CACHE_MODE_REPLACE)
-	else:
-		scenes_resource = DH_CSR_RunnerScenes.new()
-	_scenes = scenes_resource.scenes
-
-func _on_item_remove_pressed(data: DH_CSR_RunnerSceneData) -> void:
-	_scenes.erase(data)
-	_save_and_notify()
-
-func _set_items_from_scenes():
+func _render(items: Array[DH_CSR_SceneItemViewModel]) -> void:
 	for child in %ItemsContainer.get_children():
 		child.queue_free()
-	for scene_data in _scenes:
+	for itemview_model: DH_CSR_SceneItemViewModel in items:
 		var new_item: DH_CSR_SceneItem = item_scene.instantiate()
-		new_item.set_data(scene_data)
-		new_item.remove_pressed.connect(_on_item_remove_pressed)
-		new_item.data_changed.connect(_save_and_notify)
+		new_item.view_model = itemview_model
+		print(itemview_model.get_scene_name())
 		%ItemsContainer.add_child(new_item)
+	scenes_updated.emit()

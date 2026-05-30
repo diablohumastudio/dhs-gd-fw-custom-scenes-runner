@@ -2,64 +2,47 @@
 class_name DH_CSR_SceneItem
 extends HBoxContainer
 
-signal data_changed
-signal remove_pressed
+## View: one editable row bound to a DH_CSR_SceneItemViewModel. Renders from the
+## ViewModel and forwards user input to its commands.
 
-var run_scene_data: DH_CSR_RunnerSceneData = DH_CSR_RunnerSceneData.new()
-var _capturing_shortcut: bool = false
-
+var view_model: DH_CSR_SceneItemViewModel :
+	set(view_model_):
+		view_model = view_model_
+		_render()
 
 func _ready() -> void:
 	set_process_unhandled_key_input(false)
-	_update_ui()
+	_render()
+
+func _render() -> void:
+	if not is_node_ready() or view_model == null:
+		return
+	%NameEdit.text = view_model.get_scene_name()
+	%SceneButton.text = view_model.get_scene_label()
+	%ShortcutButton.text = view_model.get_shortcut_label()
 
 func _unhandled_key_input(event: InputEvent) -> void:
-	if not _capturing_shortcut:
+	if view_model == null or not view_model.capturing_shortcut:
 		return
 	if event is InputEventKey and event.pressed:
-		run_scene_data.keyboard_shortcut = event.keycode
-		_update_shortcut_button()
-		_capturing_shortcut = false
+		view_model.set_shortcut(event.keycode)
+		%ShortcutButton.text = view_model.get_shortcut_label()
 		set_process_unhandled_key_input(false)
-		data_changed.emit()
 
-func set_data(new_data: DH_CSR_RunnerSceneData) -> void:
-	run_scene_data = new_data
-	_update_ui()
-
-func _update_ui() -> void:
-	if not is_node_ready():
-		return
-	%NameEdit.text = run_scene_data.name
-	_update_scene_button()
-	_update_shortcut_button()
-
-func _update_scene_button() -> void:
-	%SceneButton.text = run_scene_data.scene_path.get_file() if run_scene_data.scene_path else "Select Scene..."
-
-func _update_shortcut_button() -> void:
-	if run_scene_data.keyboard_shortcut != KEY_NONE:
-		%ShortcutButton.text = OS.get_keycode_string(run_scene_data.keyboard_shortcut)
-	else:
-		%ShortcutButton.text = "Set Shortcut..."
+func _on_name_edit_text_changed(new_text: String) -> void:
+	view_model.set_scene_name(new_text)
 
 func _on_scene_button_pressed() -> void:
 	%FileDialog.popup_centered()
 
 func _on_shortcut_button_pressed() -> void:
-	_capturing_shortcut = true
+	view_model.begin_capture_shortcut()
 	%ShortcutButton.text = "Press a key..."
 	set_process_unhandled_key_input(true)
-	data_changed.emit()
+
 func _on_remove_button_pressed() -> void:
-	remove_pressed.emit(run_scene_data)
-	queue_free()
+	view_model.request_remove()
 
 func _on_file_dialog_file_selected(path: String) -> void:
-	run_scene_data.scene_path = path
-	_update_scene_button()
-	data_changed.emit()
-
-func _on_name_edit_text_changed(new_text: String) -> void:
-	run_scene_data.name = new_text
-	data_changed.emit()
+	view_model.set_scene_path(path)
+	%SceneButton.text = view_model.get_scene_label()
