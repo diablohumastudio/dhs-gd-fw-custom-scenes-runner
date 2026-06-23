@@ -32,7 +32,6 @@ unique_name_in_owner = true
 oversampling_override = 1.0
 title = "Open a File"
 file_mode = 0
-access = 0
 filters = PackedStringArray("*.tscn ; Scene Files")
 
 [connection signal="focus_exited" from="NameEdit" to="." method="_on_name_edit_focus_exited"]
