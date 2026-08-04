@@ -3,7 +3,7 @@ class_name DH_CustomScenesRunnerPlugin
 extends EditorPlugin
 
 const TOOLBAR_MENU_NAME: String = "CustomSceneRunner"
-const _CORE_PATH: String = "res://addons/diablohumastudio_framework/core/main_toolbar_plugin/main_toolbar_plugin.gd"
+const FRAMEWORK_TOOLBAR_PATH: String = "res://addons/diablohumastudio_framework/core/main_toolbar_plugin/main_toolbar_plugin.gd"
 const SELECT_SCENES_POPUP_PKSC: PackedScene = preload("uid://dlfttbd1xdwe8")
 
 static var instance: DH_CustomScenesRunnerPlugin
@@ -19,12 +19,14 @@ func _enter_tree() -> void:
 	add_toolbar_menu()
 
 func add_toolbar_menu() -> void:
+	var tool_bar_menu: DH_CustomScenesRunnerToolbar = DH_CustomScenesRunnerToolbar.new()
 	tool_bar_view_model = DH_CSR_ToolbarViewModel.new(_scenes_repository)
 	tool_bar_view_model.open_selector_requested.connect(_open_scenes_selector)
-	var tool_bar_menu: DH_CustomScenesRunnerToolbar = DH_CustomScenesRunnerToolbar.new()
 
-	if ResourceLoader.exists(_CORE_PATH):
-		load(_CORE_PATH).add_toolbar_submenu(TOOLBAR_MENU_NAME, tool_bar_menu, self)
+	# Its loaded and checked instead of DH_MainToolbarPlugin.add_toolbar_submenu(TOOLBAR_MENU_NAME, tool_bar_menu, self), 
+	# because it can be used without the main toolbar (if you dont have it class_name is not registered)
+	if ResourceLoader.exists(FRAMEWORK_TOOLBAR_PATH):
+		load(FRAMEWORK_TOOLBAR_PATH).add_toolbar_submenu(TOOLBAR_MENU_NAME, tool_bar_menu, self)
 	else:
 		add_tool_submenu_item(TOOLBAR_MENU_NAME, tool_bar_menu)
 
@@ -46,8 +48,8 @@ func _on_selector_tree_exited() -> void:
 func _exit_tree() -> void:
 	if is_instance_valid(_selector):
 		_selector.queue_free()
-	if ResourceLoader.exists(_CORE_PATH):
-		load(_CORE_PATH).remove_toolbar_submenu(TOOLBAR_MENU_NAME, self)
+	if ResourceLoader.exists(FRAMEWORK_TOOLBAR_PATH):
+		load(FRAMEWORK_TOOLBAR_PATH).remove_toolbar_submenu(TOOLBAR_MENU_NAME, self)
 	else:
 		remove_tool_menu_item(TOOLBAR_MENU_NAME)
 	if instance == self:
